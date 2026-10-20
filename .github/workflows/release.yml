@@ -1,0 +1,57 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  signed-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android 36 SDK packages
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Configure external release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SMART_LAUNCHER_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.SMART_LAUNCHER_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SMART_LAUNCHER_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SMART_LAUNCHER_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || { echo "Missing SMART_LAUNCHER_KEYSTORE_BASE64 secret" >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "Missing SMART_LAUNCHER_STORE_PASSWORD secret" >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing SMART_LAUNCHER_KEY_ALIAS secret" >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing SMART_LAUNCHER_KEY_PASSWORD secret" >&2; exit 1; }
+          mkdir -p "$HOME/.config/smart-launcher"
+          chmod 700 "$HOME/.config" "$HOME/.config/smart-launcher"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/SmartLauncher-release.p12"
+          chmod 600 "$RUNNER_TEMP/SmartLauncher-release.p12"
+          cat > "$HOME/.config/smart-launcher/signing.properties" <<EOF
+          storeFile=$RUNNER_TEMP/SmartLauncher-release.p12
+          storeType=PKCS12
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+          chmod 600 "$HOME/.config/smart-launcher/signing.properties"
+      - name: Lint, test, and build the signed release APK
+        run: ./gradlew --no-daemon clean lint testDebugUnitTest assembleRelease
+      - name: Name release artifact
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/SmartLauncher-v1.0.apk
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" dist/SmartLauncher-v1.0.apk --title "$GITHUB_REF_NAME" --notes-file docs/release-notes-v1.0.md

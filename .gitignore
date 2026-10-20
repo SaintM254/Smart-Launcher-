@@ -1,0 +1,12 @@
+# Android build outputs and local signing material
+.gradle/
+local.properties
+**/build/
+*.apk
+*.aab
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+signing.properties

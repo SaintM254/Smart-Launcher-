@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.SmartLauncher" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#56C9F7</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#07162D</item>
+        <item name="android:navigationBarColor">#07162D</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
