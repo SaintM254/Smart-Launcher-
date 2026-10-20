@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          ./gradlew --no-daemon --stacktrace lint testDebugUnitTest assembleDebug > gradle-build.log 2>&1
+          ./gradlew --no-daemon --console=plain --stacktrace lint testDebugUnitTest assembleDebug > gradle-build.log 2>&1
           result=$?
           if [ "$result" -ne 0 ]; then
             python3 - <<'PY'
@@ -35,7 +35,16 @@ jobs:
           from pathlib import Path
 
           lines = Path("gradle-build.log").read_text(errors="replace").splitlines()
-          excerpt = "\n".join(lines[-90:])[-6000:]
+          diagnostics = [
+              line for line in lines
+              if line.strip().startswith("e: ")
+              or "error:" in line.lower()
+              or "FAILURE:" in line
+              or "What went wrong" in line
+              or ".kt:" in line
+              or "Execution failed for task" in line
+          ]
+          excerpt = "\n".join(diagnostics[-80:] if diagnostics else lines[-90:])[-6000:]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write("## Gradle build failure excerpt\n\n```text\n" + excerpt + "\n```\n")
           escaped = excerpt.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
