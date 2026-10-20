@@ -2,6 +2,15 @@
 
 This guide explains how to make the existing `v*` release workflow build and publish the signed Smart Launcher APK. **Do not push the `v1.0` tag until the signing secrets are configured**: pushing a matching tag starts the release workflow automatically.
 
+## Easiest path — no coding required
+
+The signing key is already prepared and kept outside the repository. You do not need to create a key, run commands, or send me any passwords.
+
+1. In Arena, reconnect GitHub for the Smart Launcher repository and approve access to manage its GitHub Actions secrets if prompted.
+2. Return to this chat and say **“GitHub reconnected; continue.”**
+
+I can then save the release signing values securely, verify the release build, and publish `v1.0`. The current GitHub connection blocks secret setup with HTTP 403, so this one permission approval is the only action I cannot do from here. **Do not paste passwords or key files into chat.**
+
 ## 1. Keep the signing identity safe
 
 The release key and Gradle properties are kept outside Git:
