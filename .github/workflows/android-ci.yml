@@ -52,7 +52,7 @@ jobs:
           PY
             exit "$result"
           fi
-      - uses: actions/upload-artifact@v8.0.2
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: smart-launcher-debug
           path: app/build/outputs/apk/debug/app-debug.apk
