@@ -82,3 +82,7 @@ The build script writes a signed `SmartLauncher-v1.0.apk` in the repository root
 ## Screenshots directory
 
 `docs/screenshots/` is reserved for real emulator/device captures; no reference-launcher screenshots are redistributed.
+
+## Release signing guide
+
+Follow the step-by-step guide in [`docs/release-signing-guide.md`](docs/release-signing-guide.md) to grant Actions-secret access, configure the four signing secrets without exposing them, and publish the signed APK from the verified branch commit.
