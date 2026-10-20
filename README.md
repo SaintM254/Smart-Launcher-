@@ -85,4 +85,4 @@ The build script writes a signed `SmartLauncher-v1.0.apk` in the repository root
 
 ## Release signing guide
 
-Follow the step-by-step guide in [`docs/release-signing-guide.md`](docs/release-signing-guide.md) to grant Actions-secret access, configure the four signing secrets without exposing them, and publish the signed APK from the verified branch commit.
+Follow the no-code, click-by-click [GitHub permission guide](docs/release-signing-guide.md) to check the one permission needed for the signed release. Do not share a personal access token or any signing secrets.
