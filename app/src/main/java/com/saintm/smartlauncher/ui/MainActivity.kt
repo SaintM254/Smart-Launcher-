@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.saintm.smartlauncher.data.InstalledAppsRepository
 import com.saintm.smartlauncher.data.LauncherApp
 import com.saintm.smartlauncher.data.LauncherPreferences

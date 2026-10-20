@@ -103,7 +103,7 @@ class InstalledAppsRepository(context: Context) {
 
     private fun cachedIcon(packageName: String, info: ResolveInfo, fallback: Drawable): Bitmap {
         iconCache.get(packageName)?.let { return it }
-        val source = runCatching { info.loadBanner(packageManager) }.getOrNull() ?: fallback
+        val source = runCatching { info.activityInfo?.loadBanner(packageManager) }.getOrNull() ?: fallback
         val sourceBitmap = runCatching {
             val width = source.intrinsicWidth.takeIf { it > 0 }?.coerceAtMost(1024) ?: 192
             val height = source.intrinsicHeight.takeIf { it > 0 }?.coerceAtMost(1024) ?: 192

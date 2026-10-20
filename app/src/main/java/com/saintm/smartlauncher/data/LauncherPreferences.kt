@@ -325,6 +325,7 @@ class LauncherPreferences(context: Context) {
         private val K_REDUCE_ANIMATIONS = booleanPreferencesKey("reduce_animations")
         private val K_RECENTS_ENABLED = booleanPreferencesKey("recent_apps_enabled")
         private val K_RECENTS = stringPreferencesKey("recent_packages")
+        private val K_MEDIA_HISTORY = stringPreferencesKey("media_history")
         private val K_MEDIA_FILTER_ENABLED = booleanPreferencesKey("media_filter_enabled")
         private val K_ALLOWED_MEDIA = stringSetPreferencesKey("allowed_media_packages")
         private val K_LAST_FOCUSED = stringPreferencesKey("last_focused")
