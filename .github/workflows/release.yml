@@ -1,50 +1,37 @@
 name: Android Release
 
-# ─────────────────────────────────────────────────────────────
-# This workflow runs automatically every time you publish a new
-# version tag (e.g. v1.0, v1.1, v2.0) to the repository.
-# It builds a signed APK and attaches it to a GitHub Release.
-# ─────────────────────────────────────────────────────────────
-
 on:
   push:
     tags:
-      - "v*"          # triggers on any tag that starts with v
+      - "v*"
+  workflow_dispatch:
 
 permissions:
-  contents: write     # needed to create a GitHub Release
+  contents: write
 
 jobs:
-  build-and-release:
+  signed-release:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Download the source code
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # 2. Set up Java (Android needs Java to build)
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
-      # 3. Set up the Android SDK tools
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4.0.4
 
-      # 4. Install the exact Android SDK version this app needs
       - name: Install Android 36 SDK packages
         run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
-      # 5. Set up Gradle (the build tool) with caching for speed
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6.4.0
 
-      # 6. Write the signing keystore from GitHub Secrets
-      #    (Secrets are encrypted values you store in GitHub – see README for setup)
-      - name: Configure release signing
+      - name: Configure external release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.SMART_LAUNCHER_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.SMART_LAUNCHER_STORE_PASSWORD }}
@@ -52,44 +39,30 @@ jobs:
           KEY_PASSWORD: ${{ secrets.SMART_LAUNCHER_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-
-          # Make sure all four secrets are present before continuing
-          test -n "$KEYSTORE_BASE64" || { echo "❌ Secret SMART_LAUNCHER_KEYSTORE_BASE64 is missing" >&2; exit 1; }
-          test -n "$STORE_PASSWORD"  || { echo "❌ Secret SMART_LAUNCHER_STORE_PASSWORD is missing"  >&2; exit 1; }
-          test -n "$KEY_ALIAS"       || { echo "❌ Secret SMART_LAUNCHER_KEY_ALIAS is missing"       >&2; exit 1; }
-          test -n "$KEY_PASSWORD"    || { echo "❌ Secret SMART_LAUNCHER_KEY_PASSWORD is missing"    >&2; exit 1; }
-
-          # Decode the keystore file from base64
+          test -n "$KEYSTORE_BASE64" || { echo "Missing SMART_LAUNCHER_KEYSTORE_BASE64 secret" >&2; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "Missing SMART_LAUNCHER_STORE_PASSWORD secret" >&2; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing SMART_LAUNCHER_KEY_ALIAS secret" >&2; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing SMART_LAUNCHER_KEY_PASSWORD secret" >&2; exit 1; }
           mkdir -p "${HOME}/.config/smart-launcher"
           echo "$KEYSTORE_BASE64" | base64 -d > "${HOME}/.config/smart-launcher/release.keystore"
-
-          # Write the signing properties file the build script reads
           printf 'storeFile=%s\nstoreType=PKCS12\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "${HOME}/.config/smart-launcher/release.keystore" \
             "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" \
             > "${HOME}/.config/smart-launcher/signing.properties"
 
-          echo "✅ Signing configuration written successfully"
-
-      # 7. Build the signed release APK
       - name: Build signed release APK
         run: ./gradlew --no-daemon --console=plain assembleRelease
 
-      # 8. Save the APK as a downloadable artifact (always, even if next step fails)
-      - name: Upload APK as workflow artifact
+      - name: Upload release APK as action artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Launcher-${{ github.ref_name }}-release
+          name: Smart-Launcher-release-apk
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
 
-      # 9. Create a GitHub Release and attach the APK to it
       - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          tag: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           name: "Smart Launcher ${{ github.ref_name }}"
-          artifacts: "app/build/outputs/apk/release/*.apk"
-          artifactContentType: application/vnd.android.package-archive
-          generateReleaseNotes: true   # auto-generates changelog from commits
-          token: ${{ secrets.GITHUB_TOKEN }}
+          files: app/build/outputs/apk/release/*.apk
