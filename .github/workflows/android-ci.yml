@@ -24,7 +24,25 @@ jobs:
         run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
       - uses: gradle/actions/setup-gradle@v6.4.0
       - name: Lint, unit tests, and debug build
-        run: ./gradlew --no-daemon lint testDebugUnitTest assembleDebug
+        shell: bash
+        run: |
+          set +e
+          ./gradlew --no-daemon --stacktrace lint testDebugUnitTest assembleDebug > gradle-build.log 2>&1
+          result=$?
+          if [ "$result" -ne 0 ]; then
+            python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          lines = Path("gradle-build.log").read_text(errors="replace").splitlines()
+          excerpt = "\n".join(lines[-90:])[-6000:]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Gradle build failure excerpt\n\n```text\n" + excerpt + "\n```\n")
+          escaped = excerpt.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Gradle build diagnostics::{escaped}")
+          PY
+            exit "$result"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: smart-launcher-debug
